@@ -15,8 +15,8 @@ external_stylesheets = [dbc.themes.LUX]
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
-stock = yfinance.Ticker('AAPL')
-time = '1mo'
+stock = yfinance.Ticker('VTSAX')
+time = '3mo'
 
 
 SIDEBAR_STYLE = {
@@ -24,13 +24,13 @@ SIDEBAR_STYLE = {
     "top": 0,
     "left": 0,
     "bottom": 0,
-    "width": "16rem",
+    "width": "10rem",
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
 }
 sidebar = html.Div(
     [
-        html.H2("Sidebar", className="display-4"),
+        html.H5("Stats", className="display-4"),
         html.Hr(),
         html.P(
             "A simple sidebar layout with navigation links", className="lead"
@@ -52,14 +52,6 @@ CONTENT_STYLE = {
     "margin-right": "2rem",
     "padding": "2rem 1rem",
 }
-
-
-content = html.Div(id="page-content", style=CONTENT_STYLE)
-
-app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
-
-
-
 def getMA(stock, time, date_list):
 	if 'mo' in time or time=='ytd' or time=='1y':
 		df = stock.history(period='2y')
@@ -88,22 +80,29 @@ def getCandlestick(df):
 	          'hovermode':False}
 	return {'data':data, 'layout':layout}
 
+fig = px.line(df, x=df['Date'], y=df['Close'])
 
-fig = getCandlestick(df)
 
-contentmain = html.Div(
-    [
-        html.H1(stock.info['longName']),
-        html.P(stock.history(period='1mo')['Close']),
-        dcc.Graph(figure=fig)
-    ]
-)
+content = html.Div(id="page-content", style=CONTENT_STYLE)
+
+app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
+
+
+
+
+contentmain = [
+    dbc.CardHeader(stock.info['longName']),
+    dbc.CardBody(
+        html.P(dcc.Graph(figure=fig), className="card-text")
+    )
+]
+
 
 
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
     if pathname == "/":
-        return contentmain
+        return dbc.Card(contentmain, outline="True")
     elif pathname == "/page-1":
         return html.P("This is the content of page 1. Yay!")
     elif pathname == "/page-2":
